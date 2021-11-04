@@ -17,8 +17,8 @@ public class CircuitBreakerConfiguration {
     public Customizer<Resilience4JCircuitBreakerFactory> globalCustomConfiguration() {
 
         final var circuitBreakerConfig = CircuitBreakerConfig.custom()
-                .failureRateThreshold(50) //CallNotPermittedException
-                .waitDurationInOpenState(Duration.ofMillis(1000)) //CircuitBreaker 'circuitbreaker' is OPEN and does not permit further calls
+                .failureRateThreshold(50)
+                .waitDurationInOpenState(Duration.ofMillis(1000))
                 .slidingWindowSize(2)
                 .build();
 

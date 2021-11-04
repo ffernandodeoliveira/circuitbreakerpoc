@@ -1,8 +1,8 @@
 package com.example.circuitbreaker.app.service;
 
+import com.example.circuitbreaker.app.dto.ResponseDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,21 +18,30 @@ public class FreightService {
     private RestTemplate restTemplate;
 
     public String getQuote(final String url) {
-        CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
+        var circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
 
-        log.info("----------------------- URL: {} -----------------------", url);
+        final var result = circuitBreaker.run(() -> getDefaultQuote(url), throwable -> getQuoteContingency());
 
-        return circuitBreaker.run(() -> restTemplate.getForObject(url, String.class),
-                throwable -> getQuoteContingency());
+        return "Running by contingency = " + result.isContingency();
     }
 
-    public String getQuoteContingency() {
-        CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
-        String url = "https://jsonplaceholder.typicode.com/albums";
+    public ResponseDTO getDefaultQuote(String url) {
+        final var data = restTemplate.getForObject(url, String.class);
 
-        log.info("----------------------- Running contingency -----------------------");
+        return ResponseDTO.builder()
+                .isContingency(false)
+                .data(data)
+                .build();
+    }
 
-        return circuitBreaker.run(() -> restTemplate.getForObject(url, String.class));
+    public ResponseDTO getQuoteContingency() {
+        final var url = "https://jsonplaceholder.typicode.com/albums";
+        final var data = restTemplate.getForObject(url, String.class);
+
+        return ResponseDTO.builder()
+                .isContingency(true)
+                .data(data)
+                .build();
     }
 
 }
